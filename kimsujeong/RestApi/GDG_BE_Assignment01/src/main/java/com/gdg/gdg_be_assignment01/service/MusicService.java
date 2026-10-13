@@ -16,7 +16,11 @@ public class MusicService {
 
     // 클라이언트가 보낸 musicRequest 값을 이용해 새로운 Music 객체 생성, 레포지토리 저장 후 MusicResponse로 변환 뒤 반환
     public MusicResponse create(MusicRequest request) {
-        Music music = new Music(null, request.getTitle(), request.getArtist(), request.getGenre());
+        if (!request.getTitle().isPresent() || request.getTitle().get() == null) { // title이 생략되었거나 null인 경우 예외 처리
+            throw new IllegalArgumentException("제목은 필수입니다.");
+        }
+
+        Music music = new Music(null, request.getTitle().get(), request.getArtist().get(), request.getGenre().get());
         return new MusicResponse(musicRepository.save(music));
     }
 
@@ -36,13 +40,23 @@ public class MusicService {
         Music music = musicRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 노래입니다."));
 
-        music.update(request.getTitle(), request.getArtist(), request.getGenre());
+        // request.getTitle().isPresent(): 값이 있거나 null이 명시적으로 들어왔을 때 true
+        if (request.getTitle().isPresent()) {
+            music.setTitle(request.getTitle().get());
+        }
+        if (request.getArtist().isPresent()) {
+            music.setArtist(request.getArtist().get());
+        }
+        if (request.getGenre().isPresent()) {
+            music.setGenre(request.getGenre().get());
+        }
+
         return new MusicResponse(music);
     }
 
     public void delete(Long id) {
         if (!musicRepository.delete(id)) {
-            throw new IllegalArgumentException(("존재하지 않는 노래입니다."));
+            throw new IllegalArgumentException("존재하지 않는 노래입니다.");
         }
     }
 }
